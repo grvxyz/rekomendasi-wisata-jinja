@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Rekomendasi Wisata{% endblock %}
+
+{% block content %}
+<div class="rekom-wrapper">
+
+    <div class="rekom-header">
+        <h1>🤖 Rekomendasi Wisata Jogja</h1>
+        <p>Pilih satu destinasi favorit, sistem akan merekomendasikan wisata serupa.</p>
+    </div>
+
+    <!-- FORM -->
+    <form method="POST" class="rekom-form">
+        <select name="tempat" required>
+            <option value="">Pilih wisata favorit</option>
+            {% for t in tempat_list %}
+            <option value="{{ t }}" {% if t == tempat_dipilih %}selected{% endif %}>
+                {{ t }}
+            </option>
+            {% endfor %}
+        </select>
+        <button type="submit">✨ Rekomendasikan</button>
+    </form>
+
+    <!-- HASIL -->
+    {% if hasil %}
+    <h3 class="section-title">🌟 Rekomendasi Untukmu</h3>
+
+    <div class="grid">
+        {% for r in hasil %}
+        <div class="card">
+            <img src="{{ r.image }}">
+            <div class="card-body">
+                <h4>{{ r.nama }}</h4>
+                <p>⭐ {{ r.vote_average }}</p>
+                <p>HTM: Rp {{ "{:,}".format(r.htm_weekday) }}</p>
+                <a href="/wisata/{{ r.id }}">Detail</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

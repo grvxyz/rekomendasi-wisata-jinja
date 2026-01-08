@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2>📊 Dashboard Wisata</h2>
+
+<!-- FILTER -->
+<div class="filter">
+    <select id="kategori">
+        <option value="all">Semua Kategori</option>
+        {% for k in wisata | map(attribute='type') | unique %}
+        <option value="{{ k }}">{{ k }}</option>
+        {% endfor %}
+    </select>
+
+    <select id="rating">
+        <option value="">Min Rating</option>
+        {% for i in range(1,6) %}
+        <option value="{{ i }}">⭐ {{ i }}+</option>
+        {% endfor %}
+    </select>
+
+    <select id="harga">
+        <option value="">Max HTM</option>
+        <option value="10000">≤ 10.000</option>
+        <option value="20000">≤ 20.000</option>
+        <option value="50000">≤ 50.000</option>
+    </select>
+
+    <select id="sort">
+        <option value="">Urutkan</option>
+        <option value="rating_desc">⭐ Rating Tertinggi</option>
+        <option value="rating_asc">⭐ Rating Terendah</option>
+        <option value="harga_asc">💰 Harga Termurah</option>
+        <option value="harga_desc">💰 Harga Termahal</option>
+    </select>
+</div>
+
+<div id="map"></div>
+
+<h3>📍 Daftar Wisata</h3>
+<div class="grid" id="list"></div>
+{% endblock %}
+
+{% block script %}
+<script>
+const map = L.map('map').setView([-7.7972, 110.3688], 11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+let markers = [];
+
+function loadData() {
+    const kategori = document.getElementById("kategori").value;
+    const rating = document.getElementById("rating").value;
+    const harga = document.getElementById("harga").value;
+    const sort = document.getElementById("sort").value;
+
+    fetch(`/api/wisata?kategori=${kategori}&rating=${rating}&harga=${harga}&sort=${sort}`)
+        .then(res => res.json())
+        .then(data => {
+
+            // CLEAR MAP
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            // CLEAR LIST
+            const list = document.getElementById("list");
+            list.innerHTML = "";
+
+            data.forEach(w => {
+
+                // MARKER
+                if (w.latitude && w.longitude) {
+                    const m = L.marker([w.latitude, w.longitude])
+                        .addTo(map)
+                        .bindPopup(`
+                            <img src="${w.image}" style="width:150px;border-radius:8px"><br>
+                            <b>${w.nama}</b><br>
+                            ⭐ ${w.vote_average}<br>
+                            <a href="/wisata/${w.id}">Detail</a>
+                        `);
+                    markers.push(m);
+                }
+
+                // CARD
+                list.innerHTML += `
+                    <div class="card">
+                        <img src="${w.image}">
+                        <div class="card-body">
+                            <h4>${w.nama}</h4>
+                            <p>⭐ ${w.vote_average}</p>
+                            <p>HTM Weekday: Rp ${w.htm_weekday.toLocaleString()}</p>
+                            <p>HTM Weekend: Rp ${w.htm_weekend.toLocaleString()}</p>
+                            <a href="/wisata/${w.id}">Detail</a>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+}
+
+// EVENT LISTENER
+["kategori","rating","harga","sort"].forEach(id => {
+    document.getElementById(id).addEventListener("change", loadData);
+});
+
+// LOAD AWAL
+loadData();
+</script>
+{% endblock %}
